@@ -1,15 +1,47 @@
-import React, { useState, useMemo } from 'react'
-import { roomsDummyData, facilityIcons, assets } from '../assets/assets'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useMemo, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { facilityIcons, assets } from '../assets/assets'
 import StarRating from '../components/StarRating'
+import { useAppContext } from '../context/AppContext'
 
 const AllRooms = () => {
-  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const {rooms, navigate, currency} = useAppContext()
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Get search parameters from URL
+  const searchFilters = {
+    destination: searchParams.get('destination') || ''
+  }
+
+  // Set loading to false when rooms are loaded
+  useEffect(() => {
+    if (rooms.length > 0 || rooms.length === 0) {
+      setIsLoading(false)
+    }
+  }, [rooms])
+
+  // Convert local path to API endpoint or use placeholder
+  const getImageSrc = (img) => {
+    if (!img) return null;
+    
+    // If it's a local path or invalid, use reliable placeholder
+    if (img.includes('C:') || img.includes('\\\\') || img.includes('\\') || img.includes('via.placeholder.com')) {
+      // Use Unsplash source for reliable hotel room images
+      return 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80';
+    }
+    
+    return img;
+  };
 
   const [priceRange, setPriceRange] = useState({ min: '', max: '' })
   const [selectedRoomTypes, setSelectedRoomTypes] = useState([])
   const [selectedAmenities, setSelectedAmenities] = useState([])
   const [minRating, setMinRating] = useState('')
+
+  const handleRoomClick = (roomId) => {
+    navigate(`/room/${roomId}`)
+  }
   const [showFilters, setShowFilters] = useState(false)
 
   const handleRoomTypeChange = (type) => {
@@ -34,7 +66,22 @@ const AllRooms = () => {
   }
 
   const filteredRooms = useMemo(() => {
-    return roomsDummyData.filter((room) => {
+    return rooms.filter((room) => {
+      // Filter by destination
+      if (searchFilters.destination && room.hotel) {
+        const searchLower = searchFilters.destination.toLowerCase()
+        
+        // Handle city as array or string
+        const cityMatch = Array.isArray(room.hotel.city) 
+          ? room.hotel.city.some(c => c.toLowerCase().includes(searchLower))
+          : room.hotel.city?.toLowerCase().includes(searchLower)
+        
+        const hotelMatch = room.hotel.name?.toLowerCase().includes(searchLower)
+        const addressMatch = room.hotel.address?.toLowerCase().includes(searchLower)
+        
+        if (!cityMatch && !hotelMatch && !addressMatch) return false
+      }
+
       if (priceRange.min && room.pricePerNight < parseInt(priceRange.min)) return false
       if (priceRange.max && room.pricePerNight > parseInt(priceRange.max)) return false
 
@@ -49,7 +96,7 @@ const AllRooms = () => {
 
       return true
     })
-  }, [priceRange, selectedRoomTypes, selectedAmenities, minRating])
+  }, [searchFilters.destination, priceRange, selectedRoomTypes, selectedAmenities, minRating])
 
   return (
     <div className="pt-24 px-4 md:px-10 lg:px-20">
@@ -150,29 +197,34 @@ const AllRooms = () => {
         {/* Rooms */}
         <div className="flex-1">
 
-          {filteredRooms.length === 0 && (
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center min-h-[50vh]">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+              <p className="mt-4 text-gray-500">Loading rooms...</p>
+            </div>
+          ) : filteredRooms.length === 0 ? (
             <p className="text-center text-gray-500">No rooms found</p>
-          )}
+          ) : null}
 
-          <div className="grid gap-6">
+          {!isLoading && filteredRooms.length > 0 && (
+            <div className="grid gap-6">
             {filteredRooms.map((room) => (
-              <div key={room._id} className="bg-white rounded-xl shadow p-4 flex flex-col md:flex-row gap-4 hover:shadow-xl transition-all duration-300 group">
+              <div key={room._id} className="bg-white rounded-xl shadow p-4 flex flex-col md:flex-row gap-4 hover:shadow-xl transition-all duration-300 group cursor-pointer" onClick={() => handleRoomClick(room._id)}>
 
                 <img
-                  src={room.images[0]}
-                  className="w-full md:w-1/3 h-52 object-cover rounded-lg cursor-pointer group-hover:scale-105 transition-transform duration-300"
-                  onClick={() => navigate(`/rooms/${room._id}`)}
+                  src={getImageSrc(room.images && room.images[0])}
+                  className="w-full md:w-1/3 h-52 object-cover rounded-lg group-hover:scale-105 transition-transform duration-300"
                 />
 
                 <div className="flex-1 flex flex-col justify-between">
 
                   <div>
-                    <p className="text-sm text-gray-500">{room.hotel.city}</p>
+                    <p className="text-sm text-gray-500">{room.hotel?.city?.[0] || room.hotel?.city || 'Unknown City'}</p>
                     <h3
-                      className="text-xl font-semibold cursor-pointer group-hover:text-blue-600 transition-colors"
-                      onClick={() => navigate(`/rooms/${room._id}`)}
+                      className="text-xl font-semibold group-hover:text-blue-600 transition-colors"
+                      onClick={() => handleRoomClick(room._id)}
                     >
-                      {room.hotel.name}
+                      {room.hotel?.name || 'Unknown Hotel'}
                     </h3>
 
                     <div className="flex items-center gap-2">
@@ -180,16 +232,16 @@ const AllRooms = () => {
                       <span className="text-sm text-gray-500">200+ reviews</span>
                     </div>
 
-                    <p className="text-sm text-gray-500 mt-1">{room.hotel.address}</p>
+                    <p className="text-sm text-gray-500 mt-1">{room.hotel?.address || 'Unknown Address'}</p>
                   </div>
 
                   <div className="flex justify-between items-center mt-4">
                     <p className="text-lg font-bold">${room.pricePerNight}/night</p>
                     <button
-                      onClick={() => navigate(`/rooms/${room._id}`)}
                       className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition-colors transform hover:scale-105 active:scale-95"
+                      onClick={() => handleRoomClick(room._id)}
                     >
-                      View
+                      View Details
                     </button>
                   </div>
 
@@ -214,7 +266,8 @@ const AllRooms = () => {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
 
       </div>

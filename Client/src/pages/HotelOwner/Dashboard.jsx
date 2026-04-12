@@ -1,70 +1,166 @@
-import React from 'react'
-import { assets, dashboardDummyData } from '../../assets/assets'
+import React, { useState, useEffect } from 'react'
+import { assets } from '../../assets/assets'
+import { useAppContext } from '../../context/AppContext'
 
 const Dashboard = () => {
-  const { totalBookings, totalRevenue, bookings } = dashboardDummyData
+  const { currency, toast, getToken, axios, user } = useAppContext()
+
+  const [dashboardData, setDashboardData] = useState({
+    totalBookings: 0,
+    totalRevenue: 0,
+    bookings: []
+  })
+
+  const [loading, setLoading] = useState(true)
+
+  const API_URL = import.meta.env.VITE_BACKEND_URL
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+      const token = await getToken()
+
+      const { data } = await axios.get(
+        `${API_URL}/api/bookings/hotel`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      )
+
+      if (data.success) {
+        setDashboardData(data.dashboardData)
+      }else{
+        toast.error(data.message || 'Failed to load dashboard data')
+      }
+    } catch (error) {
+      console.log('Dashboard error:', error)
+      toast.error(
+        error.response?.data?.message || 'Failed to load dashboard data'
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if(user) {
+      fetchDashboardData()
+    }
+  }, [user])
+
+  const { totalBookings, totalRevenue, bookings } = dashboardData
+
+  // ✅ Loading UI
+  if (loading) {
+    return <div className="p-6">Loading dashboard...</div>
+  }
 
   return (
-    <div className='flex-1 p-6 bg-gray-100 min-h-screen'>
-      <div className='mb-6'>
-        <h1 className='text-3xl font-bold text-gray-800'>Dashboard</h1>
-        <p className='text-gray-600 mt-2'>Monitor your room listings, track bookings and analyze revenue—all in one place. Stay updated with real-time insights to ensure smooth operations.</p>
+    <div className="flex-1 p-6 bg-gray-50 min-h-screen">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+        <p className="text-gray-600">
+          Monitor your room listings, track bookings and analyze revenue—all in
+          one place.
+        </p>
       </div>
 
-      {/* Stats Cards */}
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-6 mb-8'>
-        <div className='bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex items-center space-x-4'>
-          <img src={assets.totalBookingIcon} alt="Total Bookings" className='w-12 h-12 p-3 bg-blue-100 rounded-full' />
-          <div>
-            <p className='text-gray-600 text-sm'>Total Bookings</p>
-            <p className='text-2xl font-bold text-gray-800'>{totalBookings}</p>
-          </div>
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Bookings */}
+        <div className="bg-white p-6 rounded-xl shadow border">
+          <img src={assets.totalBookingIcon} className="w-6 mb-2" />
+          <h3 className="text-2xl font-bold">{totalBookings}</h3>
+          <p className="text-gray-500">Total Bookings</p>
         </div>
-        <div className='bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex items-center space-x-4'>
-          <img src={assets.totalRevenueIcon} alt="Total Revenue" className='w-12 h-12 p-3 bg-green-100 rounded-full' />
-          <div>
-            <p className='text-gray-600 text-sm'>Total Revenue</p>
-            <p className='text-2xl font-bold text-gray-800'>${totalRevenue}</p>
-          </div>
+
+        {/* Revenue */}
+        <div className="bg-white p-6 rounded-xl shadow border">
+          <img src={assets.totalRevenueIcon} className="w-6 mb-2" />
+          <h3 className="text-2xl font-bold">
+            {currency}
+            {totalRevenue?.toLocaleString()}
+          </h3>
+          <p className="text-gray-500">Total Revenue</p>
+        </div>
+
+        {/* Rooms */}
+        <div className="bg-white p-6 rounded-xl shadow border">
+          <h3 className="text-2xl font-bold">24</h3>
+          <p className="text-gray-500">Available Rooms</p>
+        </div>
+
+        {/* Occupancy */}
+        <div className="bg-white p-6 rounded-xl shadow border">
+          <h3 className="text-2xl font-bold">78%</h3>
+          <p className="text-gray-500">Occupancy Rate</p>
         </div>
       </div>
 
-      {/* Recent Bookings */}
-      <div className='bg-white p-6 rounded-lg shadow-sm border border-gray-200'>
-        <h2 className='text-xl font-semibold text-gray-800 mb-4'>Recent Bookings</h2>
-        <div className='overflow-x-auto'>
-          <table className='min-w-full divide-y divide-gray-200'>
-            <thead className='bg-gray-50'>
+      {/* Table */}
+      <div className="bg-white rounded-xl shadow border">
+        <div className="p-6 border-b">
+          <h2 className="text-xl font-semibold">Recent Bookings</h2>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead className="bg-gray-50 text-left text-sm text-gray-500">
               <tr>
-                <th scope='col' className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>User Name</th>
-                <th scope='col' className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>Room Name</th>
-                <th scope='col' className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>Total Amount</th>
-                <th scope='col' className='px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider'>Payment Status</th>
+                <th className="px-6 py-3">User</th>
+                <th className="px-6 py-3">Room</th>
+                <th className="px-6 py-3">Amount</th>
+                <th className="px-6 py-3">Status</th>
               </tr>
             </thead>
-            <tbody className='bg-white divide-y divide-gray-200'>
-              {bookings.map((booking) => (
-                <tr key={booking._id}>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900'>
-                    {booking.user.username}
-                  </td>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-                    {booking.room.roomType}
-                  </td>
-                  <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900'>
-                    ${booking.totalPrice}
-                  </td>
-                  <td className='px-6 py-4 whitespace-nowrap'>
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                      booking.isPaid 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
-                      {booking.isPaid ? 'Completed' : 'Pending'}
-                    </span>
+
+            <tbody>
+              {bookings.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan="4"
+                    className="text-center py-6 text-gray-500"
+                  >
+                    No bookings found
                   </td>
                 </tr>
-              ))}
+              ) : (
+                bookings.map((booking) => (
+                  <tr key={booking._id} className="border-t">
+                    {/* User */}
+                    <td className="px-6 py-4">
+                      {booking.user?.username || 'Unknown User'}
+                    </td>
+
+                    {/* Room */}
+                    <td className="px-6 py-4">
+                      {booking.room?.roomType || 'N/A'}
+                    </td>
+
+                    {/* Amount */}
+                    <td className="px-6 py-4">
+                      {currency}
+                      {booking.totalPrice?.toLocaleString()}
+                    </td>
+
+                    {/* Status */}
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs ${
+                          booking.isPaid
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-yellow-100 text-yellow-700'
+                        }`}
+                      >
+                        {booking.isPaid ? 'Completed' : 'Pending'}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

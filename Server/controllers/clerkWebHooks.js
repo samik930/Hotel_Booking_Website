@@ -14,9 +14,9 @@ const clerkWebhooks = async (req, res) => {
         //getting data from request body 
         const { data, type } = req.body
         const userData = {
-            id: data.id,
+            _id: data.id,
+            userName: data.first_name + " " + data.last_name,
             email: data.email_addresses[0].email_address,
-            username: data.first_name + " " + data.last_name,
             image: data.image_url,
         }
         //switch cases 
