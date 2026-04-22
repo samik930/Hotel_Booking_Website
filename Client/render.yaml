@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: hotel-booking-frontend
+    env: static
+    buildCommand: "npm install && npm run build"
+    publishDir: dist
+    envVars:
+      - key: NODE_ENV
+        value: production
