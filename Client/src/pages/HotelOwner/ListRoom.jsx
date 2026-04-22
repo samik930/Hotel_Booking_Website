@@ -4,6 +4,8 @@ import { useAppContext } from '../../context/AppContext'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL
+
 const ListRoom = () => {
   const navigate = useNavigate()
   const [rooms, setRooms] = useState([])
@@ -34,7 +36,7 @@ const ListRoom = () => {
         throw new Error('No authentication token available')
       }
       
-      const response = await axios.get('http://localhost:3000/api/room/owner', {
+      const response = await axios.get(`${API_BASE_URL}/api/room/owner`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -82,7 +84,7 @@ const ListRoom = () => {
   const handleToggleAvailability = async (roomId) => {
     try {
       const token = await getToken()
-      const response = await axios.put('http://localhost:3000/api/room/toggle-availability', 
+      const response = await axios.put(`${API_BASE_URL}/api/room/toggle-availability`, 
         { roomId },
         {
           headers: {

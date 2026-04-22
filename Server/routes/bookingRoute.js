@@ -1,13 +1,10 @@
 import express from 'express'
-import { checkRoomAvailability, createBooking, getUserBookings, getHotelBooking } from '../controllers/bookingController.js'
-import { protect } from '../middleware/authMiddleware.js'
+import { createBooking, getUserBookings, getHotelBookings } from '../controllers/bookingController.js'
 
 const bookingRouter = express.Router()
 
-bookingRouter.post('/check-availability', checkRoomAvailability)
-bookingRouter.post('/book', protect, createBooking)
-bookingRouter.get('/user', protect, getUserBookings)
-bookingRouter.get('/hotel', protect, getHotelBooking)
-
+bookingRouter.post('/', createBooking)
+bookingRouter.get('/user', getUserBookings)
+bookingRouter.get('/hotel', getHotelBookings)
 
 export default bookingRouter

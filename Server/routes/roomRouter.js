@@ -1,7 +1,7 @@
 import express from "express";
 import upload from "../middleware/uploadMiddleware.js";
 import { protect } from "../middleware/authMiddleware.js";
-import { createRoom, toggleRoomAvailability, getOwnerRooms, getRooms, getRoomById } from "../controllers/roomController.js";
+import { createRoom, toggleRoomAvailability, getOwnerRooms, getRooms, getRoomById, checkRoomAvailability } from "../controllers/roomController.js";
 
 const roomRouter = express.Router();
 
@@ -25,6 +25,7 @@ roomRouter.post('/', upload.array("images", 4), createRoom);
 
 // GET routes
 roomRouter.get('/', getRooms)
+roomRouter.get('/owner', getOwnerRooms)
 roomRouter.get('/:id', getRoomById)
 roomRouter.get('/test', async (req, res) => {
     try {
@@ -37,7 +38,7 @@ roomRouter.get('/test', async (req, res) => {
         res.json({ success: false, message: error.message });
     }
 });
-roomRouter.get('/owner', getOwnerRooms)
+roomRouter.post('/check-availability', checkRoomAvailability);
 roomRouter.put('/toggle-availability', toggleRoomAvailability)
 
 export default roomRouter;

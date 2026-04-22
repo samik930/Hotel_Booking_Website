@@ -1,5 +1,10 @@
 import React, { useState } from "react"
+import { assets } from '../../assets/assets'
 import { useAppContext } from "../../context/AppContext"
+import { useAuth } from '@clerk/react'
+import { toast } from 'react-hot-toast'
+
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL
 
 const AddRoom = () => {
   const { axios, getToken } = useAppContext()
@@ -98,33 +103,26 @@ const AddRoom = () => {
     try {
       // Test server connection first
       console.log("Testing server connection...")
-      const testResponse = await axios.get("http://localhost:3000/api/test")
+      const testResponse = await axios.get(`${API_BASE_URL}/api/test`)
       console.log("Server test:", testResponse.data)
-
-      /*// Test existing room GET route
-      const roomTestResponse = await axios.get("http://localhost:3000/api/room")
-      console.log("Room GET test:", roomTestResponse.data)
 
       // Create form data
       const formData = new FormData()
       formData.append("roomType", roomData.roomType)
       formData.append("pricePerNight", roomData.price)  // Backend expects pricePerNight
-      formData.append("description", roomData.description)
-      formData.append("isAvailable", roomData.isAvailable)*/
-
-      // Add amenities as JSON string
       formData.append("amenities", JSON.stringify(roomData.amenities))
 
       // Add images
       roomData.images.forEach((img) => formData.append("images", img.file))
 
+      // Submit to server with authentication
+      console.log("Submitting to server...")
+      
       // Get auth token
       const token = await getToken()
       console.log("Token obtained:", token ? "Yes" : "No")
       
-      // Submit to server with full URL
-      console.log("Submitting to server...")
-      const response = await axios.post("http://localhost:3000/api/room", formData, {
+      const response = await axios.post(`${API_BASE_URL}/api/room`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -295,21 +293,6 @@ const AddRoom = () => {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
-                </div>
-
-                {/* Description */}
-                <div className="mt-6">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Description
-                  </label>
-                  <textarea
-                    name="description"
-                    value={roomData.description}
-                    onChange={handleChange}
-                    rows={4}
-                    placeholder="Describe the room features, view, amenities, etc."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  />
                 </div>
 
                 {/* Amenities */}

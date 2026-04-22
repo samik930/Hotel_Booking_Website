@@ -22,6 +22,9 @@ app.use(cors({
 })) //Enable cross origin resource sharing 
 app.use(express.json())
 
+// Serve static files from uploads directory
+app.use('/uploads', express.static('uploads'))
+
 // Configure Clerk middleware 
 app.use('/api/clerk',clerkWebhooks)
 app.use('/api/user', clerkMiddleware({
@@ -36,13 +39,17 @@ app.use('/api/booking', clerkMiddleware({
   publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
   secretKey: process.env.CLERK_SECRET_KEY
 }), bookingRouter)
+// Add back Clerk middleware to room routes
 app.use('/api/room', clerkMiddleware({
   publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
   secretKey: process.env.CLERK_SECRET_KEY
 }), roomRouter)
 
-// Public route to get all rooms (no authentication required)
-app.get('/api/rooms', async (req, res) => {
+// Public route to get all rooms (now with authentication for user filtering)
+app.get('/api/rooms', clerkMiddleware({
+  publishableKey: process.env.CLERK_PUBLISHABLE_KEY,
+  secretKey: process.env.CLERK_SECRET_KEY
+}), async (req, res) => {
   try {
     const { getRooms } = await import('./controllers/roomController.js')
     await getRooms(req, res)

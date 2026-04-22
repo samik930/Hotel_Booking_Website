@@ -16,7 +16,7 @@ const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 export const api = axios.create({
 
-    baseURL: API_BASE_URL,
+    baseURL: API_BASE_URL,      
 
     withCredentials: true,
 
@@ -77,39 +77,29 @@ export const AppProvider = ({ children }) => {
     }
 
     const fetchUser = async () => {
-
         try {
-
-            const {data} = await axios.get("/api/user",{headers:{"Authorization":`Bearer ${await getToken()}`}});
-
+            console.log('Fetching user data...')
+            const {data} = await axios.get(`${API_BASE_URL}/api/user`,{headers:{"Authorization":`Bearer ${await getToken()}`}});
+            console.log('User data response:', data)
             if(data.success){
-
                 setIsOwner(data.role === "hotelOwner");
-
+                console.log('Setting isOwner to:', data.role === "hotelOwner")
                 setSearchedCities(data.recentSearchedCities);
-
             } else {
-
+                console.log('User data fetch failed, retrying...')
                 setTimeout(() => {
-
                     fetchUser();
-
                 }, 5000);
-
             }
-
         } catch (error) {
-
+            console.error('Error fetching user:', error)
            toast.error(error.message);
-
         }
-
     };
 
 
 
     useEffect(()=>{
-
        if(user) {
 
         fetchUser();
@@ -150,7 +140,7 @@ export const AppProvider = ({ children }) => {
 
         rooms,
 
-        setRooms
+        setRooms,
 
     }
 

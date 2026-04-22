@@ -6,10 +6,9 @@ const Sidebar = () => {
     const location = useLocation();
     
     const menuItems = [
-        { icon: assets.dashboard_icon, text: 'Dashboard', path: '/owner' },
-        { icon: assets.add_icon, text: 'Add Room', path: '/owner/add-room' },
-        { icon: assets.room_icon, text: 'List Rooms', path: '/owner/list-rooms' },
-        { icon: assets.booking_icon, text: 'Bookings', path: '/owner/bookings' },
+        { icon: assets.dashboardIcon, text: 'Dashboard', path: '/owner' },
+        { icon: assets.addIcon, text: 'Add Room', path: '/owner/add-room' },
+        { icon: assets.listIcon, text: 'List Rooms', path: '/owner/list-room' },
     ];
 
     return (

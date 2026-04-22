@@ -5,15 +5,30 @@ import Hotel from "../models/Hotel.js"
 
 export const getUserData = async (req, res) => {
     try {
-        const role = req.user.role;
-        const recentSearchedCities = req.user.recentSearchedCities;
+        // Get user ID from Clerk authentication
+        const auth = await req.auth();
+        const userId = auth?.userId || auth?.sub;
+        
+        if (!userId) {
+            return res.json({ success: false, message: "User not authenticated" });
+        }
+        
+        // Find user in database
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.json({ success: false, message: "User not found" });
+        }
+        
+        const role = user.role;
+        const recentSearchedCities = user.recentSearchedCities;
         
         // Check if user has a registered hotel
-        const hotel = await Hotel.findOne({ owner: req.user._id });
+        const hotel = await Hotel.findOne({ owner: userId });
         const hasHotel = !!hotel;
         
         res.json({ success: true, role, recentSearchedCities, hasHotel });
     } catch (error) {
+        console.error('Error in getUserData:', error);
         res.json({ success: false, message: error.message });
     }
 }
@@ -22,8 +37,22 @@ export const getUserData = async (req, res) => {
 
 export const storeRecentSearchedCities = async (req, res) => {
     try {
+        // Get user ID from Clerk authentication
+        const auth = await req.auth();
+        const userId = auth?.userId || auth?.sub;
+        
+        if (!userId) {
+            return res.json({ success: false, message: "User not authenticated" });
+        }
+        
         const { recentSearchedCity } = req.body;
-        const user = await req.user;
+        
+        // Find user in database
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.json({ success: false, message: "User not found" });
+        }
+        
         if (user.recentSearchedCities.length < 3) {
             user.recentSearchedCities.push(recentSearchedCity);
         } else {
@@ -33,6 +62,7 @@ export const storeRecentSearchedCities = async (req, res) => {
         await user.save();
         res.json({ success: true, message: "City added to recent searches" });
     } catch (error) {
+        console.error('Error in storeRecentSearchedCities:', error);
         res.json({ success: false, message: error.message });
     }
 }
