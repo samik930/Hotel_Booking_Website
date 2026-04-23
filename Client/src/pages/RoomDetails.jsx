@@ -106,7 +106,7 @@ const RoomDetails = () => {
             if (response.data.success) {
                 toast.success('Booking successful! Redirecting to your bookings...')
                 setTimeout(() => {
-                    navigate('/my-bookings')
+                    navigate('/MyBookings')
                 }, 2000)
             } else {
                 console.log('Booking failed:', response.data.message)
